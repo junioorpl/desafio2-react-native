@@ -30,23 +30,83 @@ const CartProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
+      const data = await AsyncStorage.getItem('@goMarket:products');
+      if (data) setProducts(JSON.parse(data));
     }
 
     loadProducts();
   }, []);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  useEffect(() => {
+    async function storeProducts(): Promise<void> {
+      await AsyncStorage.setItem(
+        '@goMarket:products',
+        JSON.stringify(products),
+      );
+    }
+    storeProducts();
+  }, [products]);
 
-  const increment = useCallback(async id => {
-    // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+  const addToCart = useCallback(
+    async product => {
+      const index = products.findIndex(p => p.id === product.id);
 
-  const decrement = useCallback(async id => {
-    // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+      if (index < 0) {
+        setProducts([...products, { ...product, quantity: 1 }]);
+      } else {
+        setProducts(
+          products.map(p => {
+            if (p.id === products[index].id)
+              return { ...p, quantity: p.quantity + 1 };
+
+            return p;
+          }),
+        );
+      }
+    },
+    [products],
+  );
+
+  const increment = useCallback(
+    async id => {
+      const index = products.findIndex(p => p.id === id);
+
+      if (index > -1) {
+        setProducts(
+          products.map(p => {
+            if (p.id === products[index].id)
+              return { ...p, quantity: p.quantity + 1 };
+
+            return p;
+          }),
+        );
+      }
+    },
+    [products],
+  );
+
+  const decrement = useCallback(
+    async id => {
+      const index = products.findIndex(p => p.id === id);
+
+      if (products[index].quantity === 1) {
+        const aux = products;
+        setProducts(aux.splice(index, 1));
+      }
+
+      if (index > -1) {
+        setProducts(
+          products.map(p => {
+            if (p.id === products[index].id && p.quantity > 0)
+              return { ...p, quantity: p.quantity - 1 };
+
+            return p;
+          }),
+        );
+      }
+    },
+    [products],
+  );
 
   const value = React.useMemo(
     () => ({ addToCart, increment, decrement, products }),
